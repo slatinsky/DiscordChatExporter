@@ -26,6 +26,7 @@ public partial record Message(
     IReadOnlyList<Reaction> Reactions,
     IReadOnlyList<User> MentionedUsers,
     MessageReference? Reference,
+    Poll? Poll,
     Message? ReferencedMessage,
     Interaction? Interaction
 ) : IHasId
@@ -171,6 +172,8 @@ public partial record Message
         var referencedMessage = json.GetPropertyOrNull("referenced_message")?.Pipe(Parse);
         var interaction = json.GetPropertyOrNull("interaction")?.Pipe(Interaction.Parse);
 
+        var poll = json.GetPropertyOrNull("poll")?.Pipe(Poll.Parse);
+
         return new Message(
             id,
             kind,
@@ -187,6 +190,7 @@ public partial record Message
             reactions,
             mentionedUsers,
             messageReference,
+            poll,
             referencedMessage,
             interaction
         );

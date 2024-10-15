@@ -661,6 +661,33 @@
                             }
                         </div>
                     }
+
+                    @* Polls *@
+                    @if (message.Poll is not null)
+                    {
+                        <div class="chatlog__poll">
+                            <div class="chatlog__poll-question">@message.Poll.Content</div>
+                            <div class="chatlog__poll-options">
+                                @foreach (var option in message.Poll.Options)
+                                {
+                                    <div class="chatlog__poll-option">
+                                        <div class="chatlog__poll-optioncontainer">
+                                            @if (option.Emoji is not null)
+                                            {
+                                                <img class="chatlog__poll-option-emoji" alt="@option.Emoji.Name" src="@await ResolveAssetUrlAsync(option.Emoji.ImageUrl)" loading="lazy">
+                                            }
+                                            <div class="chatlog__poll-option-text">@option.Content</div>
+                                            <div class="chatlog__poll-option-spacer"></div>
+                                            <div class="chatlog__poll-option-count">@option.VotesCount vote@(message.Poll.TotalVotes == 1 ? "" : "s")</div>
+                                            <div class="chatlog__poll-option-percentage">@(option.Ratio * 100)%</div>
+                                        </div>
+                                        <div class="chatlog__poll-option-bar" style="width: @(option.Ratio * 100)%"></div>
+                                    </div>
+                                }
+                            </div>
+                            <div class="chatlog__poll-totalcount">@message.Poll.TotalVotes vote@(message.Poll.TotalVotes == 1 ? "" : "s")</div>
+                        </div>
+                    }
                 </div>
             }
         </div>

@@ -89,6 +89,24 @@ internal class JsonMessageWriter(Stream stream, ExportContext context)
         await _writer.FlushAsync(cancellationToken);
     }
 
+    private async ValueTask WriteEmojiAsync(
+        Emoji emoji,
+        CancellationToken cancellationToken = default
+    )
+    {
+        _writer.WriteStartObject();
+        _writer.WriteString("id", emoji.Id.ToString());
+        _writer.WriteString("name", emoji.Name);
+        _writer.WriteString("code", emoji.Code);
+        _writer.WriteBoolean("isAnimated", emoji.IsAnimated);
+        _writer.WriteString(
+            "imageUrl",
+            await Context.ResolveAssetUrlAsync(emoji.ImageUrl, cancellationToken)
+        );
+        _writer.WriteEndObject();
+        await _writer.FlushAsync(cancellationToken);
+    }
+
     private async ValueTask WriteEmbedAuthorAsync(
         EmbedAuthor embedAuthor,
         CancellationToken cancellationToken = default
@@ -431,16 +449,8 @@ internal class JsonMessageWriter(Stream stream, ExportContext context)
             _writer.WriteStartObject();
 
             // Emoji
-            _writer.WriteStartObject("emoji");
-            _writer.WriteString("id", reaction.Emoji.Id.ToString());
-            _writer.WriteString("name", reaction.Emoji.Name);
-            _writer.WriteString("code", reaction.Emoji.Code);
-            _writer.WriteBoolean("isAnimated", reaction.Emoji.IsAnimated);
-            _writer.WriteString(
-                "imageUrl",
-                await Context.ResolveAssetUrlAsync(reaction.Emoji.ImageUrl, cancellationToken)
-            );
-            _writer.WriteEndObject();
+            _writer.WritePropertyName("emoji");
+            await WriteEmojiAsync(reaction.Emoji, cancellationToken);
 
             _writer.WriteNumber("count", reaction.Count);
 
@@ -514,6 +524,32 @@ internal class JsonMessageWriter(Stream stream, ExportContext context)
             _writer.WritePropertyName("user");
             await WriteUserAsync(message.Interaction.User, cancellationToken);
 
+            _writer.WriteEndObject();
+        }
+
+        // Poll
+        if (message.Poll is not null)
+        {
+            _writer.WriteStartObject("poll");
+            _writer.WriteString("content", message.Poll.Content);
+            _writer.WriteString("expiry", Context.NormalizeDate(message.Poll.Expiry));
+            _writer.WriteStartArray("answers");
+            foreach (var option in message.Poll.Options)
+            {
+                _writer.WriteStartObject();
+                _writer.WriteNumber("id", option.Id);
+                _writer.WriteString("content", option.Content);
+                _writer.WriteNumber("votesCount", option.VotesCount);
+
+                if (option.Emoji is not null)
+                {
+                    _writer.WritePropertyName("emoji");
+                    await WriteEmojiAsync(option.Emoji, cancellationToken);
+                }
+
+                _writer.WriteEndObject();
+            }
+            _writer.WriteEndArray();
             _writer.WriteEndObject();
         }
 
